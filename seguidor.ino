@@ -1,14 +1,16 @@
-// Pinos dos sensores
+// Sensores
 #define SENSOR_ESQ 2
 #define SENSOR_DIR 3
 
-// Pinos do motor esquerdo
-#define IN1 4
-#define IN2 5
-
-// Pinos do motor direito
-#define IN3 6
+// Motores (usando pinos PWM)
+#define IN1 5   // motor esquerdo (PWM)
+#define IN2 4
+#define IN3 6   // motor direito (PWM)
 #define IN4 7
+
+// Velocidades
+int VELOCIDADE_BASE = 200; // 0–255
+int CURVA = 120;           // velocidade reduzida na curva
 
 void setup() {
   pinMode(SENSOR_ESQ, INPUT);
@@ -24,54 +26,40 @@ void loop() {
   int esq = digitalRead(SENSOR_ESQ);
   int dir = digitalRead(SENSOR_DIR);
 
-  if (esq == LOW && dir == LOW) {   
-    // Linha centralizada -> anda reto
-    frente();
-  } 
-  else if (esq == HIGH && dir == LOW) {  
-    // Detectou linha na esquerda -> vira para a esquerda (para motor esq)
-    pararEsq();
-    frenteDir();
-  } 
-  else if (esq == LOW && dir == HIGH) {  
-    // Detectou linha na direita -> vira para a direita (para motor dir)
-    pararDir();
-    frenteEsq();
-  } 
-  else {  
-    // Perdeu a linha -> pode parar ou girar em busca
-    parar();
+  if (esq == LOW && dir == LOW) {
+    // Linha centralizada -> reto
+    mover(VELOCIDADE_BASE, VELOCIDADE_BASE);
+  }
+  else if (esq == HIGH && dir == LOW) {
+    // Linha na esquerda -> curva à esquerda
+    mover(CURVA, VELOCIDADE_BASE);
+  }
+  else if (esq == LOW && dir == HIGH) {
+    // Linha na direita -> curva à direita
+    mover(VELOCIDADE_BASE, CURVA);
+  }
+  else {
+    // Fora da linha -> parar
+    mover(0, 0);
   }
 }
 
-void frente() {
-  digitalWrite(IN1, HIGH);
-  digitalWrite(IN2, LOW);
-  digitalWrite(IN3, HIGH);
-  digitalWrite(IN4, LOW);
-}
+void mover(int velEsq, int velDir) {
+  // Motor esquerdo
+  if (velEsq > 0) {
+    analogWrite(IN1, velEsq);
+    digitalWrite(IN2, LOW);
+  } else {
+    digitalWrite(IN1, LOW);
+    digitalWrite(IN2, LOW);
+  }
 
-void frenteEsq() {
-  digitalWrite(IN1, HIGH);
-  digitalWrite(IN2, LOW);
-}
-
-void frenteDir() {
-  digitalWrite(IN3, HIGH);
-  digitalWrite(IN4, LOW);
-}
-
-void pararEsq() {
-  digitalWrite(IN1, LOW);
-  digitalWrite(IN2, LOW);
-}
-
-void pararDir() {
-  digitalWrite(IN3, LOW);
-  digitalWrite(IN4, LOW);
-}
-
-void parar() {
-  pararEsq();
-  pararDir();
+  // Motor direito
+  if (velDir > 0) {
+    analogWrite(IN3, velDir);
+    digitalWrite(IN4, LOW);
+  } else {
+    digitalWrite(IN3, LOW);
+    digitalWrite(IN4, LOW);
+  }
 }
